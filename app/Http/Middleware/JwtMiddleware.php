@@ -10,6 +10,9 @@ use Tymon\JWTAuth\Http\Middleware\BaseMiddleware;
 class JwtMiddleware extends BaseMiddleware
 {
 
+    protected $response = [];
+    protected $error_msg = null;
+
     /**
      * Handle an incoming request.
      *
@@ -24,12 +27,26 @@ class JwtMiddleware extends BaseMiddleware
             $user = JWTAuth::parseToken()->authenticate();
         } catch (Exception $e) {
             if ($e instanceof \Tymon\JWTAuth\Exceptions\TokenInvalidException){
-                return response()->json(['status' => 'Token is Invalid']);
+
+                $this->error_msg = "Token is Invalid";
+
             }else if ($e instanceof \Tymon\JWTAuth\Exceptions\TokenExpiredException){
-                return response()->json(['status' => 'Token is Expired']);
+
+                $this->error_msg = "Token is Expired";
+
             }else{
-                return response()->json(['status' => 'Authorization Token not found']);
+
+                $this->error_msg = "Authorization Token not found";
             }
+
+            $this->response = [
+                "status" => "error",
+                "error" => true,
+                "response_code" => 400,
+                "message" => $this->error_msg,
+            ];
+
+            return response($this->response, $this->response['response_code']);
         }
         return $next($request);
     }
